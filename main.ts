@@ -1,4 +1,4 @@
-declare const enum Block {
+declare const enum BuildingBlock {
     //% blockIdentity="blocks.block" enumval=0 block="Air"
     Air = 0,
     //% blockIdentity="blocks.block" enumval=4 block="Cobblestone"
@@ -24,9 +24,9 @@ declare const enum RoofType {
     Dome = 4
 }
 
-declare const enum FillOperation {
-    Replace,
-    Outline
+declare const enum BuildingFillOperation {
+    Replace = 0,
+    Outline = 1
 }
 
 declare class Position {
@@ -38,8 +38,8 @@ declare namespace positions {
 }
 
 declare namespace blocks {
-    function block(block: Block): number;
-    function fill(block: number, from: Position, to: Position, operation: FillOperation): void;
+    function block(block: BuildingBlock): number;
+    function fill(block: number, from: Position, to: Position, operation: BuildingFillOperation): void;
     function place(block: number, pos: Position): void;
 }
 
@@ -54,47 +54,8 @@ declare namespace player {
 //% weight=100 color=#0fbc11 icon="\uf1ad"
 //% block="Building"
 namespace building {
-    // Constants
-    const AIR = Block.Air;
-    const COBBLESTONE = Block.Cobblestone;
-    const BLOCK_OF_QUARTZ = Block.Glass; // Quartz block is not available, using glass as alternative
-    const LOG_JUNGLE = Block.JungleLog;
-    const PLANKS_OAK = Block.OakPlanks;
-    const LIGHT_GRAY_CONCRETE = Block.LightGrayConcrete;
-
-    // Global variables
-    let 층높이합계 = 0;
-    let ㄷ창문_만들기_조절 = false;
-    let 세로z시작 = 0;
-    let 가로x시작 = 0;
-    let 창문_간격 = 0;
-    let 창문_길이 = 0;
-    let 창문_블록 = 0;
-    let 창문_만들기 = false;
-    let 지붕형태 = 0;
-    let 지붕블록 = 0;
-    let 벽블록 = 0;
-    let 기둥블록 = 0;
-    let 바닥내부블록 = 0;
-    let 바닥외부블록 = 0;
-    let 지붕한계높이 = 0;
-    let 층높이 = 0;
-    let 높이 = 0;
-    let 세로z끝 = 0;
-    let 가로x끝 = 0;
-    let 가로12 = 0;
-    let 세로13 = 0;
-    let 세로13지점 = 0;
-    let 세로23지점 = 0;
-    let index = 0;
-    let 가로길이 = 0;
-    let 세로길이 = 0;
-    let 반복 = 0;
-
-    // Helper function to create position
-    function pos(x: number, y: number, z: number): Position {
-        return positions.createWorld(x, y, z);
-    }
+    let floorHeightSum = 0;
+    let windowAdjustment = false;
 
     //% block="Create square building width:$width length:$length height:$height floor height:$floorHeight||floor block:$floorBlock wall block:$wallBlock pillar block:$pillarBlock roof block:$roofBlock roof type:$roofType windows:$windowEnabled window block:$windowBlock window length:$windowLength window gap:$windowGap roof limit:$roofLimit"
     //% width.min=5 width.max=100 width.defl=20
@@ -102,17 +63,17 @@ namespace building {
     //% height.min=5 height.max=100 height.defl=20
     //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
     //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=Block.Cobblestone
+    //% floorBlock.defl=BuildingBlock.Cobblestone
     //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=Block.OakPlanks
+    //% wallBlock.defl=BuildingBlock.OakPlanks
     //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=Block.JungleLog
+    //% pillarBlock.defl=BuildingBlock.JungleLog
     //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=Block.LightGrayConcrete
+    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
     //% roofType.defl=RoofType.Flat
     //% windowEnabled.defl=true
     //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=Block.Glass
+    //% windowBlock.defl=BuildingBlock.Glass
     //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
     //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
     //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
@@ -123,13 +84,13 @@ namespace building {
         length: number,
         height: number,
         floorHeight: number,
-        floorBlock: number = COBBLESTONE,
-        wallBlock: number = PLANKS_OAK,
-        pillarBlock: number = LOG_JUNGLE,
-        roofBlock: number = LIGHT_GRAY_CONCRETE,
+        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
+        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
+        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
+        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
         roofType: RoofType = RoofType.Flat,
         windowEnabled: boolean = true,
-        windowBlock: number = BLOCK_OF_QUARTZ,
+        windowBlock: number = blocks.block(BuildingBlock.Glass),
         windowLength: number = 2,
         windowGap: number = 2,
         roofLimit: number = 0
@@ -143,43 +104,43 @@ namespace building {
         // Build main structure
         blocks.fill(
             wallBlock,
-            pos(x, 0, z),
-            pos(endX, height, endZ),
-            FillOperation.Outline
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Outline
         );
 
         // Build floor
         blocks.fill(
             floorBlock,
-            pos(x, 0, z),
-            pos(endX, 0, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, 0, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Add pillars
         blocks.fill(
             pillarBlock,
-            pos(x, 1, z),
-            pos(x, height, z),
-            FillOperation.Replace
+            positions.createWorld(x, 1, z),
+            positions.createWorld(x, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, z),
-            pos(endX, height, z),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, z),
+            positions.createWorld(endX, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(x, 1, endZ),
-            pos(x, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 1, endZ),
+            positions.createWorld(x, height, endZ),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, endZ),
-            pos(endX, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, endZ),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Add windows if enabled
@@ -214,17 +175,17 @@ namespace building {
     //% height.min=5 height.max=100 height.defl=20
     //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
     //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=Block.Cobblestone
+    //% floorBlock.defl=BuildingBlock.Cobblestone
     //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=Block.OakPlanks
+    //% wallBlock.defl=BuildingBlock.OakPlanks
     //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=Block.JungleLog
+    //% pillarBlock.defl=BuildingBlock.JungleLog
     //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=Block.LightGrayConcrete
+    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
     //% roofType.defl=RoofType.Flat
     //% windowEnabled.defl=true
     //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=Block.Glass
+    //% windowBlock.defl=BuildingBlock.Glass
     //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
     //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
     //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
@@ -235,13 +196,13 @@ namespace building {
         length: number,
         height: number,
         floorHeight: number,
-        floorBlock: number = COBBLESTONE,
-        wallBlock: number = PLANKS_OAK,
-        pillarBlock: number = LOG_JUNGLE,
-        roofBlock: number = LIGHT_GRAY_CONCRETE,
+        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
+        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
+        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
+        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
         roofType: RoofType = RoofType.Flat,
         windowEnabled: boolean = true,
-        windowBlock: number = BLOCK_OF_QUARTZ,
+        windowBlock: number = blocks.block(BuildingBlock.Glass),
         windowLength: number = 2,
         windowGap: number = 2,
         roofLimit: number = 0
@@ -257,51 +218,51 @@ namespace building {
         // Build main structure
         blocks.fill(
             wallBlock,
-            pos(x, 0, z),
-            pos(endX, height, endZ),
-            FillOperation.Outline
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Outline
         );
 
         // Build floor
         blocks.fill(
             floorBlock,
-            pos(x, 0, z),
-            pos(endX, 0, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, 0, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Add pillars
         blocks.fill(
             pillarBlock,
-            pos(x, 1, z),
-            pos(x, height, z),
-            FillOperation.Replace
+            positions.createWorld(x, 1, z),
+            positions.createWorld(x, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, z),
-            pos(endX, height, z),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, z),
+            positions.createWorld(endX, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(x, 1, endZ),
-            pos(x, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 1, endZ),
+            positions.createWorld(x, height, endZ),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, endZ),
-            pos(endX, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, endZ),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Remove blocks to create ㄱ shape
         blocks.fill(
-            AIR,
-            pos(x, 0, z),
-            pos(x + halfWidth - 1, height, z + halfZ - 1),
-            FillOperation.Replace
+            blocks.block(BuildingBlock.Air),
+            positions.createWorld(x, 0, z),
+            positions.createWorld(x + halfWidth - 1, height, z + halfZ - 1),
+            BuildingFillOperation.Replace
         );
 
         // Add windows if enabled
@@ -327,17 +288,17 @@ namespace building {
     //% height.min=5 height.max=100 height.defl=20
     //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
     //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=Block.Cobblestone
+    //% floorBlock.defl=BuildingBlock.Cobblestone
     //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=Block.OakPlanks
+    //% wallBlock.defl=BuildingBlock.OakPlanks
     //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=Block.JungleLog
+    //% pillarBlock.defl=BuildingBlock.JungleLog
     //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=Block.LightGrayConcrete
+    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
     //% roofType.defl=RoofType.Flat
     //% windowEnabled.defl=true
     //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=Block.Glass
+    //% windowBlock.defl=BuildingBlock.Glass
     //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
     //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
     //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
@@ -348,13 +309,13 @@ namespace building {
         length: number,
         height: number,
         floorHeight: number,
-        floorBlock: number = COBBLESTONE,
-        wallBlock: number = PLANKS_OAK,
-        pillarBlock: number = LOG_JUNGLE,
-        roofBlock: number = LIGHT_GRAY_CONCRETE,
+        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
+        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
+        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
+        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
         roofType: RoofType = RoofType.Flat,
         windowEnabled: boolean = true,
-        windowBlock: number = BLOCK_OF_QUARTZ,
+        windowBlock: number = blocks.block(BuildingBlock.Glass),
         windowLength: number = 2,
         windowGap: number = 2,
         roofLimit: number = 0
@@ -369,51 +330,51 @@ namespace building {
         // Build main structure
         blocks.fill(
             wallBlock,
-            pos(x, 0, z),
-            pos(endX, height, endZ),
-            FillOperation.Outline
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Outline
         );
 
         // Build floor
         blocks.fill(
             floorBlock,
-            pos(x, 0, z),
-            pos(endX, 0, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 0, z),
+            positions.createWorld(endX, 0, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Add pillars
         blocks.fill(
             pillarBlock,
-            pos(x, 1, z),
-            pos(x, height, z),
-            FillOperation.Replace
+            positions.createWorld(x, 1, z),
+            positions.createWorld(x, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, z),
-            pos(endX, height, z),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, z),
+            positions.createWorld(endX, height, z),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(x, 1, endZ),
-            pos(x, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(x, 1, endZ),
+            positions.createWorld(x, height, endZ),
+            BuildingFillOperation.Replace
         );
         blocks.fill(
             pillarBlock,
-            pos(endX, 1, endZ),
-            pos(endX, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(endX, 1, endZ),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Replace
         );
 
         // Remove blocks to create ㄷ shape
         blocks.fill(
-            AIR,
-            pos(x, 0, z + thirdWidth),
-            pos(Math.floor(width / 2) - 1, height, z + 2 * thirdWidth - 1),
-            FillOperation.Replace
+            blocks.block(BuildingBlock.Air),
+            positions.createWorld(x, 0, z + thirdWidth),
+            positions.createWorld(Math.floor(width / 2) - 1, height, z + 2 * thirdWidth - 1),
+            BuildingFillOperation.Replace
         );
 
         // Add windows if enabled
@@ -441,29 +402,29 @@ namespace building {
             for (let x = startX + windowGap; x <= endX - windowGap - windowLength; x += windowLength + windowGap) {
                 blocks.fill(
                     windowBlock,
-                    pos(x, windowY, startZ),
-                    pos(x + windowLength, windowY + 1, startZ),
-                    FillOperation.Replace
+                    positions.createWorld(x, windowY, startZ),
+                    positions.createWorld(x + windowLength, windowY + 1, startZ),
+                    BuildingFillOperation.Replace
                 );
                 blocks.fill(
                     windowBlock,
-                    pos(x, windowY, endZ),
-                    pos(x + windowLength, windowY + 1, endZ),
-                    FillOperation.Replace
+                    positions.createWorld(x, windowY, endZ),
+                    positions.createWorld(x + windowLength, windowY + 1, endZ),
+                    BuildingFillOperation.Replace
                 );
             }
             for (let z = startZ + windowGap; z <= endZ - windowGap - windowLength; z += windowLength + windowGap) {
                 blocks.fill(
                     windowBlock,
-                    pos(startX, windowY, z),
-                    pos(startX, windowY + 1, z + windowLength),
-                    FillOperation.Replace
+                    positions.createWorld(startX, windowY, z),
+                    positions.createWorld(startX, windowY + 1, z + windowLength),
+                    BuildingFillOperation.Replace
                 );
                 blocks.fill(
                     windowBlock,
-                    pos(endX, windowY, z),
-                    pos(endX, windowY + 1, z + windowLength),
-                    FillOperation.Replace
+                    positions.createWorld(endX, windowY, z),
+                    positions.createWorld(endX, windowY + 1, z + windowLength),
+                    BuildingFillOperation.Replace
                 );
             }
             windowY += 4;
@@ -474,9 +435,9 @@ namespace building {
     function buildFlatRoof(roofBlock: number, startX: number, endX: number, startZ: number, endZ: number, height: number) {
         blocks.fill(
             roofBlock,
-            pos(startX, height, startZ),
-            pos(endX, height, endZ),
-            FillOperation.Replace
+            positions.createWorld(startX, height, startZ),
+            positions.createWorld(endX, height, endZ),
+            BuildingFillOperation.Replace
         );
     }
 
@@ -485,9 +446,9 @@ namespace building {
         for (let y = 0; y < roofHeight; y++) {
             blocks.fill(
                 roofBlock,
-                pos(startX + y, height + y, startZ),
-                pos(endX - y, height + y, endZ),
-                FillOperation.Replace
+                positions.createWorld(startX + y, height + y, startZ),
+                positions.createWorld(endX - y, height + y, endZ),
+                BuildingFillOperation.Replace
             );
         }
     }
@@ -500,9 +461,9 @@ namespace building {
         for (let y = 0; y < roofHeight; y++) {
             blocks.fill(
                 roofBlock,
-                pos(startX + y, height + y, startZ + y),
-                pos(endX - y, height + y, endZ - y),
-                FillOperation.Replace
+                positions.createWorld(startX + y, height + y, startZ + y),
+                positions.createWorld(endX - y, height + y, endZ - y),
+                BuildingFillOperation.Replace
             );
         }
     }
@@ -519,31 +480,11 @@ namespace building {
                     if (x * x + z * z <= circleRadius * circleRadius) {
                         blocks.place(
                             roofBlock,
-                            pos(centerX + x, height + y, centerZ + z)
+                            positions.createWorld(centerX + x, height + y, centerZ + z)
                         );
                     }
                 }
             }
         }
-    }
-
-    function ㄷ (가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, 층높이: number, 지붕한계높이: number, 바닥블록외부: number, 바닥블록내부: number, 기둥블록: number, 벽블록: number, 지붕블록: number, 지붕형태: number) {
-        가로12 = Math.floor((가로x끝 - 가로x시작 + 1) / 2);
-        세로13 = Math.floor((세로z끝 - 세로z시작 + 1) / 3);
-        세로13지점 = 세로z시작 + 세로13 - 1;
-        세로23지점 = 세로z끝 - 세로13 + 1;
-        // ... rest of the function ...
-    }
-
-    function 피라미드지붕ㅁ (지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number) {
-        index = 0;
-        가로길이 = 가로x끝 - 가로x시작;
-        세로길이 = 세로z끝 - 세로z시작;
-        if (세로길이 >= 가로길이) {
-            반복 = Math.floor((가로길이 + 1) / 2);
-        } else {
-            반복 = Math.floor((세로길이 + 1) / 2);
-        }
-        // ... rest of the function ...
     }
 } 
