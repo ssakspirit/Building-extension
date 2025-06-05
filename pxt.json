@@ -1,0 +1,20 @@
+{
+    "name": "building",
+    "version": "1.0.0",
+    "description": "Minecraft Education Edition building blocks extension for ㅁ, ㄱ, ㄷ shaped buildings",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*"
+    },
+    "files": [
+        "main.ts"
+    ],
+    "public": true,
+    "targetVersions": {
+        "target": "1.7.25",
+        "targetId": "minecraft"
+    },
+    "supportedTargets": [
+        "minecraft"
+    ]
+} 
