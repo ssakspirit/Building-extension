@@ -1,490 +1,1052 @@
-declare const enum BuildingBlock {
-    //% blockIdentity="blocks.block" enumval=0 block="Air"
-    Air = 0,
-    //% blockIdentity="blocks.block" enumval=4 block="Cobblestone"
-    Cobblestone = 4,
-    //% blockIdentity="blocks.block" enumval=5 block="Oak Planks"
-    OakPlanks = 5,
-    //% blockIdentity="blocks.block" enumval=17 block="Jungle Log"
-    JungleLog = 17,
-    //% blockIdentity="blocks.block" enumval=20 block="Glass"
-    Glass = 20,
-    //% blockIdentity="blocks.block" enumval=236 block="Light Gray Concrete"
-    LightGrayConcrete = 236
-}
-
-declare const enum RoofType {
-    //% block="평면"
-    Flat = 1,
-    //% block="삼각형"
-    Triangle = 2,
-    //% block="피라미드"
-    Pyramid = 3,
-    //% block="돔형"
-    Dome = 4
-}
-
-declare const enum BuildingFillOperation {
-    Replace = 0,
-    Outline = 1
-}
-
-declare class Position {
-    constructor(x: number, y: number, z: number);
-}
-
-declare namespace positions {
-    function createWorld(x: number, y: number, z: number): Position;
-}
-
-declare namespace blocks {
-    function block(block: BuildingBlock): number;
-    function fill(block: number, from: Position, to: Position, operation: BuildingFillOperation): void;
-    function place(block: number, pos: Position): void;
-}
-
-declare namespace player {
-    function say(message: string): void;
-}
-
-/**
- * Custom blocks for Minecraft
- */
-
-//% weight=100 color=#0fbc11 icon="\uf1ad"
-//% block="Building"
 namespace building {
-    let floorHeightSum = 0;
-    let windowAdjustment = false;
+    // enum 지붕형태 관련 코드 전체 삭제
 
-    //% block="Create square building width:$width length:$length height:$height floor height:$floorHeight||floor block:$floorBlock wall block:$wallBlock pillar block:$pillarBlock roof block:$roofBlock roof type:$roofType windows:$windowEnabled window block:$windowBlock window length:$windowLength window gap:$windowGap roof limit:$roofLimit"
-    //% width.min=5 width.max=100 width.defl=20
-    //% length.min=5 length.max=100 length.defl=20
-    //% height.min=5 height.max=100 height.defl=20
-    //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
-    //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=BuildingBlock.Cobblestone
-    //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=BuildingBlock.OakPlanks
+    const COBBLESTONE = 4;
+    const IRON_BLOCK = 42;
+    const LOG_OAK = 17;
+    const PLANKS_OAK = 5;
+    const LIGHT_GRAY_CONCRETE = 251;
+    const GLASS = 20;
+
+    // 자동으로 계산되는 매개변수들
+    let 가로x끝 = 0
+    let 세로z끝 = 0
+    let 높이 = 0
+    let 층높이 = 0
+    let 지붕한계높이 = 0
+    let 바닥외부블록 = 0
+    let 바닥내부블록 = 0
+    let 기둥블록 = 0
+    let 벽블록 = 0
+    let 지붕블록 = 0
+    let 지붕형태 = 0
+    let 창문_만들기 = false
+    let 창문_블록 = 0
+    let 창문_길이 = 0
+    let 창문_간격 = 0
+    let 가로x시작 = 0
+    let 세로z시작 = 0
+    let ㄷ창문_만들기_조절 = false
+    let 층높이합계 = 0
+    let 가로12 = 0
+    let 세로13 = 0
+    let 세로13지점 = 0
+    let 세로23지점 = 0
+    let index = 0
+    let 가로길이 = 0
+    let 세로길이 = 0
+    let 반복 = 0
+    let 창문_위치_합 = 0
+    let 가로x창문_수 = 0
+    let 세로z창문_수 = 0
+    let 곡면지붕ㅁ중심 = 0
+    let 곡면지붕ㅁ반지름 = 0
+    let 지울_높이 = 0
+    let 세로12 = 0
+    let floorHeightSum = 0
+    let windowAdjustment = false
+
+    /**
+     * 건물 속성을 정하고 자동 계산을 수행하는 명령블록
+     */
+    //% block="건물 속성 정하기 || 가로x끝:$width 세로z끝:$length 높이:$height 층높이:$floorHeight 지붕한계높이:$roofLimit | 바닥외부블록:$floorOuterBlock 바닥내부블록:$floorInnerBlock 기둥블록:$pillarBlock 벽블록:$wallBlock 지붕블록:$roofBlock 지붕형태:$roofType | 창문만들기:$windowEnabled 창문블록:$windowBlock 창문길이:$windowLength 창문간격:$windowGap"
+    //% width.defl=20
+    //% width.min=5 width.max=100
+    //% length.defl=20
+    //% length.min=5 length.max=100
+    //% height.defl=20
+    //% height.min=5 height.max=100
+    //% floorHeight.defl=4
+    //% floorHeight.min=3 floorHeight.max=10
+    //% roofLimit.defl=0
+    //% roofLimit.min=0 roofLimit.max=50
+    //% floorOuterBlock.shadow=minecraftBlock
+    //% floorOuterBlock.defl=Block.Cobblestone
+    //% floorInnerBlock.shadow=minecraftBlock
+    //% floorInnerBlock.defl=Block.PlanksOak
     //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=BuildingBlock.JungleLog
+    //% pillarBlock.defl=Block.LogOak
+    //% wallBlock.shadow=minecraftBlock
+    //% wallBlock.defl=Block.PlanksOak
     //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
-    //% roofType.defl=RoofType.Flat
+    //% roofBlock.defl=Block.LightGrayConcrete
+    //% roofType.shadow="roofTypePicker"
+    //% roofType.defl=1
+    //% roofType.min=1 roofType.max=4
+    //% roofType.enum="지붕형태"
     //% windowEnabled.defl=true
     //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=BuildingBlock.Glass
-    //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
-    //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
-    //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
+    //% windowBlock.defl=Block.Glass
+    //% windowLength.defl=2
+    //% windowLength.min=1 windowLength.max=10
+    //% windowGap.defl=2
+    //% windowGap.min=1 windowGap.max=10
     //% expandableArgumentMode="toggle"
-    //% inlineInputMode=inline
-    export function createSquareBuilding(
-        width: number,
-        length: number,
-        height: number,
-        floorHeight: number,
-        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
-        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
-        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
-        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
-        roofType: RoofType = RoofType.Flat,
+    //% weight=100
+    export function 건물속성정하기(
+        width: number = 20,
+        length: number = 20,
+        height: number = 20,
+        floorHeight: number = 4,
+        roofLimit: number = 0,
+        floorOuterBlock: number = 4,
+        floorInnerBlock: number = 5,
+        pillarBlock: number = 17,
+        wallBlock: number = 5,
+        roofBlock: number = 251,
+        roofType: number = 1,
         windowEnabled: boolean = true,
-        windowBlock: number = blocks.block(BuildingBlock.Glass),
+        windowBlock: number = 20,
         windowLength: number = 2,
-        windowGap: number = 2,
-        roofLimit: number = 0
-    ) {
-        const x = 1;
-        const z = 1;
-        // Calculate end coordinates
-        let endX = x + width - 1;
-        let endZ = z + length - 1;
+        windowGap: number = 2
+    ): void {
+        
+        // 인수값들을 변수에 할당
+        가로x끝 = width
+        세로z끝 = length
+        높이 = height
+        층높이 = floorHeight
+        지붕한계높이 = roofLimit
+        바닥외부블록 = floorOuterBlock
+        바닥내부블록 = floorInnerBlock
+        기둥블록 = pillarBlock
+        벽블록 = wallBlock
+        지붕블록 = roofBlock
+        지붕형태 = roofType
+        창문_만들기 = windowEnabled
+        창문_블록 = windowBlock
+        창문_길이 = windowLength
+        창문_간격 = windowGap
 
-        // Build main structure
-        blocks.fill(
-            wallBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Outline
-        );
-
-        // Build floor
-        blocks.fill(
-            floorBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, 0, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Add pillars
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, z),
-            positions.createWorld(x, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, z),
-            positions.createWorld(endX, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, endZ),
-            positions.createWorld(x, height, endZ),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, endZ),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Add windows if enabled
-        if (windowEnabled) {
-            addWindows(x, z, endX, endZ, height, windowBlock, windowLength, windowGap);
+        // 자동 계산 수행
+        가로x시작 = 1
+        세로z시작 = 1
+        창문_길이 += -1
+        가로x창문_수 = Math.floor((가로x끝 - 창문_간격 - 4) / (창문_간격 + 창문_길이))
+        세로z창문_수 = Math.floor((세로z끝 - 창문_간격 - 4) / (창문_간격 + 창문_길이))
+        ㄷ창문_만들기_조절 = false
+        
+        if (가로x끝 <= 세로z끝) {
+            지울_높이 = 가로x끝
+        } else {
+            지울_높이 = 세로z끝
         }
+    }
 
-        // Add roof based on type
-        switch (roofType) {
-            case RoofType.Flat:
-                buildFlatRoof(roofBlock, x, endX, z, endZ, height);
-                break;
-            case RoofType.Triangle:
-                buildTriangularRoof(roofBlock, x, endX, z, endZ, height, roofLimit);
-                break;
-            case RoofType.Pyramid:
-                buildPyramidRoof(roofBlock, x, endX, z, endZ, height, roofLimit);
-                break;
-            case RoofType.Dome:
-                if (width % 2 === 1) {
-                    buildDomeRoof(roofBlock, x, endX, z, endZ, height);
+    // 지붕 형태 선택기
+    //% shim=TD_ID
+    //% blockId=roofTypePicker
+    //% block="$type"
+    //% blockHidden=true
+    //% type.fieldEditor="numberdropdown"
+    //% type.fieldOptions.decompileLiterals=true
+    //% type.fieldOptions.data='[["평면", 1], ["삼각형", 2], ["피라미드형", 3], ["돔형", 4]]'
+    //% type.defl=1
+    export function __roofTypePicker(type: number): number {
+        return type;
+    }
+
+    /**
+     * ㅁ형(정사각형) 건물을 생성하는 명령블록
+     */
+    //% block="ㅁ형 건물 생성"
+    //% blockId=building_create_square
+    //% weight=90
+    export function ㅁ형건물생성(): void {
+        ㅁ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
+    }
+
+    /**
+     * ㄱ형(L자형) 건물을 생성하는 명령블록
+     */
+    //% block="ㄱ형 건물 생성"
+    //% blockId=building_create_l_shape
+    //% weight=80
+    export function ㄱ형건물생성(): void {
+        ㄱ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
+    }
+
+    /**
+     * ㄷ형(U자형) 건물을 생성하는 명령블록
+     */
+    //% block="ㄷ형 건물 생성"
+    //% blockId=building_create_u_shape
+    //% weight=70
+    export function ㄷ형건물생성(): void {
+        ㄷ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
+    }
+
+    /**
+     * 건물을 지우는 명령블록
+     */
+    //% block="건물 지우기"
+    //% blockId=building_clear
+    //% weight=60
+    export function 건물지우기(): void {
+        for (let index = 0; index <= 높이 + 지울_높이; index++) {
+            blocks.fill(
+                Block.Air,
+                positions.add(player.position(), pos(1, index, 1)),
+                positions.add(player.position(), pos(가로x끝, index, 세로z끝)),
+                FillOperation.Replace
+            )
+        }
+    }
+
+    // ===== 내부 헬퍼 함수들 =====
+
+    // ㅁ형 건물 생성
+    function ㅁ건물생성(가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, 층높이: number, 지붕한계높이: number, 바닥블록외부: number, 바닥블록내부: number, 기둥블록: number, 벽블록: number, 지붕블록: number, 지붕형태: number) {
+        let playerPos = player.position()
+        
+        if (지붕형태 == 4) {
+            if (가로x끝 == 세로z끝) {
+                곡면지붕ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+            } else {
+                player.say("돔형 지붕을 만들려면 가로와 세로가 같아야 합니다.")
+            }
+        }
+        
+        // 벽 생성 (외곽선)
+        blocks.fill(
+            벽블록,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Outline
+        )
+        
+        // 바닥 외부 블록
+        blocks.fill(
+            바닥블록외부,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 0, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // 바닥 내부 블록
+        blocks.fill(
+            바닥블록내부,
+            positions.add(playerPos, pos(가로x시작 + 1, 0, 세로z시작 + 1)),
+            positions.add(playerPos, pos(가로x끝 - 1, 0, 세로z끝 - 1)),
+            FillOperation.Replace
+        )
+        
+        // 창문 생성
+        if (ㄷ창문_만들기_조절) {
+            ㄷ의_ㅁ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 0, playerPos)
+        } else {
+            ㅁ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 0, playerPos)
+        }
+        
+        // 다층 건물 처리
+        층높이합계 = 0
+        if (0 < 층높이) {
+            층높이합계 += 층높이 + 1
+            while (층높이합계 < 높이) {
+                if (ㄷ창문_만들기_조절) {
+                    ㄷ의_ㅁ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 층높이합계, playerPos)
                 } else {
-                    player.say("Dome roof requires odd width and length");
+                    ㅁ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 층높이합계, playerPos)
                 }
-                break;
-        }
-    }
-
-    //% block="ㄱ자 건물 만들기 가로:$width 세로:$length 높이:$height 층높이:$floorHeight||바닥블록:$floorBlock 벽블록:$wallBlock 기둥블록:$pillarBlock 지붕블록:$roofBlock 지붕형태:$roofType 창문설치:$windowEnabled 창문블록:$windowBlock 창문길이:$windowLength 창문간격:$windowGap 한계 지붕 높이:$roofLimit"
-    //% width.min=5 width.max=100 width.defl=20
-    //% length.min=5 length.max=100 length.defl=20
-    //% height.min=5 height.max=100 height.defl=20
-    //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
-    //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=BuildingBlock.Cobblestone
-    //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=BuildingBlock.OakPlanks
-    //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=BuildingBlock.JungleLog
-    //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
-    //% roofType.defl=RoofType.Flat
-    //% windowEnabled.defl=true
-    //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=BuildingBlock.Glass
-    //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
-    //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
-    //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
-    //% expandableArgumentMode="toggle"
-    //% inlineInputMode=inline
-    export function ㄱ자건물(
-        width: number,
-        length: number,
-        height: number,
-        floorHeight: number,
-        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
-        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
-        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
-        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
-        roofType: RoofType = RoofType.Flat,
-        windowEnabled: boolean = true,
-        windowBlock: number = blocks.block(BuildingBlock.Glass),
-        windowLength: number = 2,
-        windowGap: number = 2,
-        roofLimit: number = 0
-    ) {
-        const x = 1;
-        const z = 1;
-        // Calculate dimensions
-        let endX = x + width - 1;
-        let endZ = z + length - 1;
-        let halfWidth = Math.floor(width / 2);
-        let halfZ = Math.floor(length / 2);
-
-        // Build main structure
-        blocks.fill(
-            wallBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Outline
-        );
-
-        // Build floor
-        blocks.fill(
-            floorBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, 0, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Add pillars
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, z),
-            positions.createWorld(x, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, z),
-            positions.createWorld(endX, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, endZ),
-            positions.createWorld(x, height, endZ),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, endZ),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Remove blocks to create ㄱ shape
-        blocks.fill(
-            blocks.block(BuildingBlock.Air),
-            positions.createWorld(x, 0, z),
-            positions.createWorld(x + halfWidth - 1, height, z + halfZ - 1),
-            BuildingFillOperation.Replace
-        );
-
-        // Add windows if enabled
-        if (windowEnabled) {
-            addWindows(x, z, endX, endZ, height, windowBlock, windowLength, windowGap);
-        }
-
-        // Add roof based on type
-        switch (roofType) {
-            case RoofType.Flat:
-                buildFlatRoof(roofBlock, x, endX, z, endZ, height);
-                break;
-            case RoofType.Triangle:
-                buildTriangularRoof(roofBlock, x + halfWidth, endX, z, endZ, height, roofLimit);
-                buildTriangularRoof(roofBlock, x, endX, z + halfZ, endZ, height, roofLimit);
-                break;
-        }
-    }
-
-    //% block="ㄷ자 건물 만들기 가로:$width 세로:$length 높이:$height 층높이:$floorHeight||바닥블록:$floorBlock 벽블록:$wallBlock 기둥블록:$pillarBlock 지붕블록:$roofBlock 지붕형태:$roofType 창문설치:$windowEnabled 창문블록:$windowBlock 창문길이:$windowLength 창문간격:$windowGap 한계 지붕 높이:$roofLimit"
-    //% width.min=5 width.max=100 width.defl=20
-    //% length.min=5 length.max=100 length.defl=20
-    //% height.min=5 height.max=100 height.defl=20
-    //% floorHeight.min=3 floorHeight.max=10 floorHeight.defl=4
-    //% floorBlock.shadow=minecraftBlock
-    //% floorBlock.defl=BuildingBlock.Cobblestone
-    //% wallBlock.shadow=minecraftBlock
-    //% wallBlock.defl=BuildingBlock.OakPlanks
-    //% pillarBlock.shadow=minecraftBlock
-    //% pillarBlock.defl=BuildingBlock.JungleLog
-    //% roofBlock.shadow=minecraftBlock
-    //% roofBlock.defl=BuildingBlock.LightGrayConcrete
-    //% roofType.defl=RoofType.Flat
-    //% windowEnabled.defl=true
-    //% windowBlock.shadow=minecraftBlock
-    //% windowBlock.defl=BuildingBlock.Glass
-    //% windowLength.min=1 windowLength.max=10 windowLength.defl=2
-    //% windowGap.min=1 windowGap.max=10 windowGap.defl=2
-    //% roofLimit.min=0 roofLimit.max=50 roofLimit.defl=0
-    //% expandableArgumentMode="toggle"
-    //% inlineInputMode=inline
-    export function ㄷ자건물(
-        width: number,
-        length: number,
-        height: number,
-        floorHeight: number,
-        floorBlock: number = blocks.block(BuildingBlock.Cobblestone),
-        wallBlock: number = blocks.block(BuildingBlock.OakPlanks),
-        pillarBlock: number = blocks.block(BuildingBlock.JungleLog),
-        roofBlock: number = blocks.block(BuildingBlock.LightGrayConcrete),
-        roofType: RoofType = RoofType.Flat,
-        windowEnabled: boolean = true,
-        windowBlock: number = blocks.block(BuildingBlock.Glass),
-        windowLength: number = 2,
-        windowGap: number = 2,
-        roofLimit: number = 0
-    ) {
-        const x = 1;
-        const z = 1;
-        // Calculate dimensions
-        let endX = x + width - 1;
-        let endZ = z + length - 1;
-        let thirdWidth = Math.floor(width / 3);
-
-        // Build main structure
-        blocks.fill(
-            wallBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Outline
-        );
-
-        // Build floor
-        blocks.fill(
-            floorBlock,
-            positions.createWorld(x, 0, z),
-            positions.createWorld(endX, 0, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Add pillars
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, z),
-            positions.createWorld(x, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, z),
-            positions.createWorld(endX, height, z),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(x, 1, endZ),
-            positions.createWorld(x, height, endZ),
-            BuildingFillOperation.Replace
-        );
-        blocks.fill(
-            pillarBlock,
-            positions.createWorld(endX, 1, endZ),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Replace
-        );
-
-        // Remove blocks to create ㄷ shape
-        blocks.fill(
-            blocks.block(BuildingBlock.Air),
-            positions.createWorld(x, 0, z + thirdWidth),
-            positions.createWorld(Math.floor(width / 2) - 1, height, z + 2 * thirdWidth - 1),
-            BuildingFillOperation.Replace
-        );
-
-        // Add windows if enabled
-        if (windowEnabled) {
-            addWindows(x, z, endX, endZ, height, windowBlock, windowLength, windowGap);
-        }
-
-        // Add roof based on type
-        switch (roofType) {
-            case RoofType.Flat:
-                buildFlatRoof(roofBlock, x, endX, z, endZ, height);
-                break;
-            case RoofType.Triangle:
-                buildTriangularRoof(roofBlock, x, endX, z, z + thirdWidth - 1, height, roofLimit);
-                buildTriangularRoof(roofBlock, x, endX, z + 2 * thirdWidth + 1, endZ, height, roofLimit);
-                break;
-        }
-    }
-
-    // Helper function to add windows
-    function addWindows(startX: number, startZ: number, endX: number, endZ: number, height: number, windowBlock: number, windowLength: number, windowGap: number) {
-        let windowY = 2;
-        while (windowY < height) {
-            // Add windows on all sides
-            for (let x = startX + windowGap; x <= endX - windowGap - windowLength; x += windowLength + windowGap) {
                 blocks.fill(
-                    windowBlock,
-                    positions.createWorld(x, windowY, startZ),
-                    positions.createWorld(x + windowLength, windowY + 1, startZ),
-                    BuildingFillOperation.Replace
-                );
-                blocks.fill(
-                    windowBlock,
-                    positions.createWorld(x, windowY, endZ),
-                    positions.createWorld(x + windowLength, windowY + 1, endZ),
-                    BuildingFillOperation.Replace
-                );
+                    바닥블록내부,
+                    positions.add(playerPos, pos(가로x시작 + 1, 층높이합계, 세로z시작 + 1)),
+                    positions.add(playerPos, pos(가로x끝 - 1, 층높이합계, 세로z끝 - 1)),
+                    FillOperation.Replace
+                )
+                층높이합계 += 층높이 + 1
             }
-            for (let z = startZ + windowGap; z <= endZ - windowGap - windowLength; z += windowLength + windowGap) {
-                blocks.fill(
-                    windowBlock,
-                    positions.createWorld(startX, windowY, z),
-                    positions.createWorld(startX, windowY + 1, z + windowLength),
-                    BuildingFillOperation.Replace
-                );
-                blocks.fill(
-                    windowBlock,
-                    positions.createWorld(endX, windowY, z),
-                    positions.createWorld(endX, windowY + 1, z + windowLength),
-                    BuildingFillOperation.Replace
-                );
-            }
-            windowY += 4;
         }
-    }
-
-    // Helper functions for roof types
-    function buildFlatRoof(roofBlock: number, startX: number, endX: number, startZ: number, endZ: number, height: number) {
+        
+        // 기둥 생성
         blocks.fill(
-            roofBlock,
-            positions.createWorld(startX, height, startZ),
-            positions.createWorld(endX, height, endZ),
-            BuildingFillOperation.Replace
-        );
-    }
-
-    function buildTriangularRoof(roofBlock: number, startX: number, endX: number, startZ: number, endZ: number, height: number, roofLimit: number) {
-        let roofHeight = roofLimit > 0 ? roofLimit : Math.floor((endX - startX + 1) / 2);
-        for (let y = 0; y < roofHeight; y++) {
-            blocks.fill(
-                roofBlock,
-                positions.createWorld(startX + y, height + y, startZ),
-                positions.createWorld(endX - y, height + y, endZ),
-                BuildingFillOperation.Replace
-            );
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // 지붕 생성
+        if (지붕형태 == 1) {
+            평면지붕ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+        } else if (지붕형태 == 2) {
+            삼각지붕가로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+        } else if (지붕형태 == 3) {
+            피라미드지붕ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
         }
     }
 
-    function buildPyramidRoof(roofBlock: number, startX: number, endX: number, startZ: number, endZ: number, height: number, roofLimit: number) {
-        let width = endX - startX + 1;
-        let length = endZ - startZ + 1;
-        let roofHeight = roofLimit > 0 ? roofLimit : Math.floor(Math.min(width, length) / 2);
-
-        for (let y = 0; y < roofHeight; y++) {
-            blocks.fill(
-                roofBlock,
-                positions.createWorld(startX + y, height + y, startZ + y),
-                positions.createWorld(endX - y, height + y, endZ - y),
-                BuildingFillOperation.Replace
-            );
+    // ㄱ형 건물 생성
+    function ㄱ건물생성(가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, 층높이: number, 지붕한계높이: number, 바닥블록외부: number, 바닥블록내부: number, 기둥블록: number, 벽블록: number, 지붕블록: number, 지붕형태: number) {
+        let playerPos = player.position()
+        
+        가로12 = (가로x끝 - 가로x시작 + 1) / 2
+        세로12 = (세로z끝 - 세로z시작 + 1) / 2
+        
+        // 전체 외곽 생성
+        blocks.fill(
+            벽블록,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Outline
+        )
+        
+        // 바닥 외부 블록
+        blocks.fill(
+            바닥블록외부,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 0, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // 바닥 내부 블록
+        blocks.fill(
+            바닥블록내부,
+            positions.add(playerPos, pos(가로x시작 + 1, 0, 세로z시작 + 1)),
+            positions.add(playerPos, pos(가로x끝 - 1, 0, 세로z끝 - 1)),
+            FillOperation.Replace
+        )
+        
+        // 창문 생성
+        ㄱ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 0, playerPos)
+        
+        // 다층 건물 처리
+        층높이합계 = 0
+        if (0 < 층높이) {
+            층높이합계 += 층높이 + 1
+            while (층높이합계 < 높이) {
+                ㄱ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 층높이합계, playerPos)
+                blocks.fill(
+                    바닥블록내부,
+                    positions.add(playerPos, pos(가로x시작 + 1, 층높이합계, 세로z시작 + 1)),
+                    positions.add(playerPos, pos(가로x끝 - 1, 층높이합계, 세로z끝 - 1)),
+                    FillOperation.Replace
+                )
+                층높이합계 += 층높이 + 1
+            }
         }
+        
+        // 기둥 생성
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // ㅁ형 내부 구조 생성
+        ㅁ건물생성(가로x시작, Math.round(가로12), 세로z시작, Math.round(세로12), 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 1)
+        
+        // 지붕 생성
+        if (지붕형태 == 1) {
+            평면지붕ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+        } else if (지붕형태 == 2) {
+            let 가로12_rounded = Math.round(가로12)
+            let 세로12_rounded = Math.round(세로12)
+            if (세로12_rounded < 가로12_rounded) {
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로12_rounded, 세로z끝, 높이, playerPos)
+                삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+            } else {
+                삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로12_rounded, 세로z끝, 높이, playerPos)
+            }
+        }
+        
+        // L자 모양을 위한 내부 공간 제거
+        blocks.fill(
+            Block.Air,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(Math.round(가로12) - 1, 높이, Math.round(세로12) - 1)),
+            FillOperation.Replace
+        )
     }
 
-    function buildDomeRoof(roofBlock: number, startX: number, endX: number, startZ: number, endZ: number, height: number) {
-        let radius = Math.floor((endX - startX) / 2);
-        let centerX = startX + radius;
-        let centerZ = startZ + radius;
+    function ㄷ건물생성(가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, 층높이: number, 지붕한계높이: number, 바닥블록외부: number, 바닥블록내부: number, 기둥블록: number, 벽블록: number, 지붕블록: number, 지붕형태: number) {
+        let playerPos = player.position()
+        
+        가로12 = (가로x끝 - 가로x시작 + 1) / 2
+        세로13 = Math.round((세로z끝 - 세로z시작 + 1) / 3)
+        세로13지점 = 세로z시작 + 세로13 - 1
+        세로23지점 = 세로z끝 - 세로13 + 1
+        
+        // 전체 외곽 생성
+        blocks.fill(
+            벽블록,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Outline
+        )
+        
+        // 바닥 외부 블록
+        blocks.fill(
+            바닥블록외부,
+            positions.add(playerPos, pos(가로x시작, 0, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 0, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // 바닥 내부 블록
+        blocks.fill(
+            바닥블록내부,
+            positions.add(playerPos, pos(가로x시작 + 1, 0, 세로z시작 + 1)),
+            positions.add(playerPos, pos(가로x끝 - 1, 0, 세로z끝 - 1)),
+            FillOperation.Replace
+        )
+        
+        // 창문 생성
+        ㄷ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 0, playerPos)
+        
+        // 다층 건물 처리
+        층높이합계 = 0
+        if (0 < 층높이) {
+            층높이합계 += 층높이 + 1
+            while (층높이합계 < 높이) {
+                ㄷ창문(가로x시작, 세로z시작, 가로x끝, 세로z끝, 층높이합계, playerPos)
+                blocks.fill(
+                    바닥블록내부,
+                    positions.add(playerPos, pos(가로x시작 + 1, 층높이합계, 세로z시작 + 1)),
+                    positions.add(playerPos, pos(가로x끝 - 1, 층높이합계, 세로z끝 - 1)),
+                    FillOperation.Replace
+                )
+                층높이합계 += 층높이 + 1
+            }
+        }
+        
+        // 기둥 생성
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        blocks.fill(
+            기둥블록,
+            positions.add(playerPos, pos(가로x끝, 1, 세로z끝)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+        
+        // 중앙 사각형 구조 생성
+        ㄷ창문_만들기_조절 = true
+        ㅁ건물생성(가로x시작, Math.round(가로12), 세로13지점, 세로23지점, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 1)
+        ㄷ창문_만들기_조절 = false
+        
+        // 지붕 생성
+        if (지붕형태 == 1) {
+            평면지붕ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+        } else if (지붕형태 == 2) {
+            let 가로12_rounded = Math.round(가로12)
+            let 세로13지점_rounded = Math.round(세로13지점)
+            let 세로23지점_rounded = Math.round(세로23지점)
+            if (가로12_rounded < 세로13지점_rounded) {
+                삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로13지점_rounded, 높이, playerPos)
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로23지점_rounded, 세로z끝, 높이, playerPos)
+                삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+            }
+        }
+        
+        // ㄷ자 모양을 위한 내부 공간 제거
+        blocks.fill(
+            Block.Air,
+            positions.add(playerPos, pos(가로x시작, 0, 세로13지점 + 1)),
+            positions.add(playerPos, pos(Math.round(가로12) - 1, 높이, 세로23지점 - 1)),
+            FillOperation.Replace
+        )
+    }
 
-        for (let y = 0; y <= radius; y++) {
-            let circleRadius = Math.floor(Math.sqrt(radius * radius - y * y));
-            for (let x = -circleRadius; x <= circleRadius; x++) {
-                for (let z = -circleRadius; z <= circleRadius; z++) {
-                    if (x * x + z * z <= circleRadius * circleRadius) {
-                        blocks.place(
-                            roofBlock,
-                            positions.createWorld(centerX + x, height + y, centerZ + z)
-                        );
-                    }
+    // ===== 지붕 생성 함수들 =====
+
+    function 평면지붕ㅁ(지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, playerPos: Position) {
+        blocks.fill(
+            지붕블록,
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+    }
+
+    function 삼각지붕가로ㅁ(지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, playerPos: Position) {
+        index = 0
+        가로길이 = 가로x끝 - 가로x시작 + 1
+        반복 = 가로길이
+        if (지붕한계높이 <= 0) {
+            반복 = 반복 / 2
+        } else if (지붕한계높이 <= 반복 / 2) {
+            반복 = 지붕한계높이
+        } else {
+            반복 = 반복 / 2
+        }
+        
+        for (let index2 = 0; index2 < 반복; index2++) {
+            blocks.fill(
+                지붕블록,
+                positions.add(playerPos, pos(가로x시작 + index, 높이 + index, 세로z시작)),
+                positions.add(playerPos, pos(가로x끝 - index, 높이 + index, 세로z끝)),
+                FillOperation.Replace
+            )
+            blocks.fill(
+                Block.Air,
+                positions.add(playerPos, pos(가로x시작 + (1 + index), 높이 + index, 세로z시작 + 1)),
+                positions.add(playerPos, pos(가로x끝 - 1 - index, 높이 + index, 세로z끝 - 1)),
+                FillOperation.Replace
+            )
+            index += 1
+        }
+        index += -1
+        blocks.fill(
+            지붕블록,
+            positions.add(playerPos, pos(가로x시작 + index, 높이 + index, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝 - index, 높이 + index, 세로z끝)),
+            FillOperation.Replace
+        )
+    }
+
+    function 삼각지붕세로ㅁ(지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, playerPos: Position) {
+        index = 0
+        세로길이 = 세로z끝 - 세로z시작 + 1
+        반복 = 세로길이
+        if (지붕한계높이 <= 0) {
+            반복 = 반복 / 2
+        } else if (지붕한계높이 <= 반복 / 2) {
+            반복 = 지붕한계높이
+        } else {
+            반복 = 반복 / 2
+        }
+        
+        for (let index2 = 0; index2 < 반복; index2++) {
+            blocks.fill(
+                지붕블록,
+                positions.add(playerPos, pos(가로x시작, 높이 + index, 세로z시작 + index)),
+                positions.add(playerPos, pos(가로x끝, 높이 + index, 세로z끝 - index)),
+                FillOperation.Replace
+            )
+            blocks.fill(
+                Block.Air,
+                positions.add(playerPos, pos(가로x시작 + 1, 높이 + index, 세로z시작 + (1 + index))),
+                positions.add(playerPos, pos(가로x끝 - 1, 높이 + index, 세로z끝 - 1 - index)),
+                FillOperation.Replace
+            )
+            index += 1
+        }
+        index += -1
+        blocks.fill(
+            지붕블록,
+            positions.add(playerPos, pos(가로x시작, 높이 + index, 세로z시작 + index)),
+            positions.add(playerPos, pos(가로x끝, 높이 + index, 세로z끝 - index)),
+            FillOperation.Replace
+        )
+    }
+
+    function 피라미드지붕ㅁ(지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, playerPos: Position) {
+        index = 0
+        가로길이 = 가로x끝 - 가로x시작
+        세로길이 = 세로z끝 - 세로z시작
+        if (세로길이 >= 가로길이) {
+            반복 = 가로길이 + 1
+        } else {
+            반복 = 세로길이 + 1
+        }
+        if (지붕한계높이 <= 0) {
+            반복 = 반복 / 2
+        } else if (지붕한계높이 <= 반복 / 2) {
+            반복 = 지붕한계높이
+        } else {
+            반복 = 반복 / 2
+        }
+        
+        for (let index2 = 0; index2 < 반복; index2++) {
+            blocks.fill(
+                지붕블록,
+                positions.add(playerPos, pos(가로x시작 + index, 높이 + index, 세로z시작 + index)),
+                positions.add(playerPos, pos(가로x끝 - index, 높이 + index, 세로z끝 - index)),
+                FillOperation.Replace
+            )
+            blocks.fill(
+                Block.Air,
+                positions.add(playerPos, pos(index + (가로x시작 + 1), 높이 + index, index + (세로z시작 + 1))),
+                positions.add(playerPos, pos(가로x끝 - 1 - index, 높이 + index, 세로z끝 - 1 - index)),
+                FillOperation.Replace
+            )
+            index += 1
+        }
+        index += -1
+        blocks.fill(
+            지붕블록,
+            positions.add(playerPos, pos(가로x시작 + index, 높이 + index, 세로z시작 + index)),
+            positions.add(playerPos, pos(가로x끝 - index, 높이 + index, 세로z끝 - index)),
+            FillOperation.Replace
+        )
+    }
+
+    function 곡면지붕ㅁ(지붕블록: number, 가로x시작: number, 가로x끝: number, 세로z시작: number, 세로z끝: number, 높이: number, playerPos: Position) {
+        곡면지붕ㅁ중심 = (가로x끝 - 가로x시작) / 2 + 1
+        곡면지붕ㅁ반지름 = (가로x끝 - 가로x시작) / 2 + 0
+        
+        shapes.sphere(
+            지붕블록,
+            positions.add(
+                positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                pos(0, 높이 + 1, 0)
+            ),
+            곡면지붕ㅁ반지름,
+            ShapeOperation.Outline
+        )
+        
+        // 구체 하단부 제거
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름, 곡면지붕ㅁ반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 지붕 바닥면 생성
+        blocks.fill(
+            지붕블록,
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z끝)),
+            FillOperation.Replace
+        )
+    }
+    
+    // ===== 창문 생성 함수들 =====
+
+    function ㅁ창문(가로x시작: number, 세로z시작: number, 가로x끝: number, 세로z끝: number, 창문설치높이: number, playerPos: Position) {
+        if (!창문_만들기) return
+        
+        창문_위치_합 = 창문_간격 + 2
+        
+        // 가로 방향 창문
+        if (가로x창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x끝 / 2 - 창문_길이 / 2, 창문설치높이 + 2, 세로z시작)),
+                positions.add(playerPos, pos(가로x끝 / 2 + 창문_길이 / 2, 창문설치높이 + 3, 세로z시작)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 가로x끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(창문_위치_합, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(창문_위치_합 + 창문_길이, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    )
+                }
+                if (가로x끝 - 창문_위치_합 + 0 >= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 - 창문_길이 + 1, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 + 1, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+        }
+        
+        // 반대편 벽에 복사
+        blocks.clone(
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            CloneMask.Replace,
+            CloneMode.Normal
+        )
+        
+        // 세로 방향 창문
+        창문_위치_합 = 창문_간격 + 2
+        if (세로z창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 / 2 - 창문_길이 / 2)),
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 / 2 + 창문_길이 / 2)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    )
+                }
+                if (세로z끝 - 창문_위치_합 + 0 >= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+        }
+        
+        // 반대편 벽에 복사
+        blocks.clone(
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 높이, 세로z끝)),
+            positions.add(playerPos, pos(가로x끝, 1, 세로z시작)),
+            CloneMask.Replace,
+            CloneMode.Normal
+        )
+    }
+
+    function ㄱ창문(가로x시작: number, 세로z시작: number, 가로x끝: number, 세로z끝: number, 창문설치높이: number, playerPos: Position) {
+        if (!창문_만들기) return
+        
+        창문_위치_합 = 창문_간격 + 2
+        
+        // 가로 방향 창문 (뒷벽)
+        if (가로x창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x끝 / 2 - 창문_길이 / 2, 창문설치높이 + 2, 세로z끝)),
+                positions.add(playerPos, pos(가로x끝 / 2 + 창문_길이 / 2, 창문설치높이 + 3, 세로z끝)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 가로x끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(창문_위치_합, 창문설치높이 + 2, 세로z끝)),
+                        positions.add(playerPos, pos(창문_위치_합 + 창문_길이, 창문설치높이 + 3, 세로z끝)),
+                        FillOperation.Replace
+                    )
+                }
+                if (가로x끝 - 창문_위치_합 + 0 >= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 - 창문_길이 + 1, 창문설치높이 + 2, 세로z끝)),
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 + 1, 창문설치높이 + 3, 세로z끝)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+            // 앞벽 창문 (ㄱ자 특별 처리)
+            창문_위치_합 = 창문_간격 + 2
+            for (let index2 = 0; index2 < 가로x끝; index2++) {
+                if (가로x끝 - 창문_위치_합 - 2 >= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 - 창문_길이 + 1, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 + 1, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+        }
+        
+        // 세로 방향 창문 (오른쪽 벽)
+        창문_위치_합 = 창문_간격 + 2
+        if (세로z창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 세로z끝 / 2 - 창문_길이 / 2)),
+                positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 세로z끝 / 2 + 창문_길이 / 2)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    )
+                }
+                if (세로z끝 - 창문_위치_합 + 0 >= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+            // 왼쪽 벽 창문 (ㄱ자 특별 처리)
+            창문_위치_합 = 창문_간격 + 2
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (세로z끝 - 창문_위치_합 - 2 >= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
                 }
             }
         }
     }
-} 
+
+    function ㄷ창문(가로x시작: number, 세로z시작: number, 가로x끝: number, 세로z끝: number, 창문설치높이: number, playerPos: Position) {
+        if (!창문_만들기) return
+        
+        창문_위치_합 = 창문_간격 + 2
+        
+        // 가로 방향 창문 (앞쪽 벽)
+        if (가로x창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x끝 / 2 - 창문_길이 / 2, 창문설치높이 + 2, 세로z시작)),
+                positions.add(playerPos, pos(가로x끝 / 2 + 창문_길이 / 2, 창문설치높이 + 3, 세로z시작)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 가로x끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(창문_위치_합, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(창문_위치_합 + 창문_길이, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    )
+                }
+                if (가로x끝 - 창문_위치_합 >= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 - 창문_길이 + 1, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 + 1, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+        }
+        
+        // 반대편 벽에 복사
+        blocks.clone(
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            CloneMask.Replace,
+            CloneMode.Normal
+        )
+        
+        // 세로 방향 창문 (ㄷ자 양쪽 벽)
+        창문_위치_합 = 창문_간격 + 2
+        if (세로z창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 / 2 - 창문_길이 / 2)),
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 / 2 + 창문_길이 / 2)),
+                FillOperation.Replace
+            )
+        } else {
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 + 1 <= 세로13지점) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    )
+                }
+                if (세로z끝 - 창문_위치_합 - 1 >= 세로23지점) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+            // 오른쪽 벽 창문
+            창문_위치_합 = 창문_간격 + 2
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    )
+                }
+                if (세로z끝 - 창문_위치_합 >= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    )
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2
+                }
+            }
+        }
+    }
+
+    function ㄷ의_ㅁ창문(
+        가로x시작: number,
+        세로z시작: number,
+        가로x끝: number,
+        세로z끝: number,
+        창문설치높이: number,
+        playerPos: Position
+    ) {
+        if (!창문_만들기) return;
+
+        // 가로 방향 창문 (앞쪽 벽)
+        창문_위치_합 = 창문_간격 + 2;
+        if (가로x창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x끝 / 2 - 창문_길이 / 2, 창문설치높이 + 2, 세로z시작)),
+                positions.add(playerPos, pos(가로x끝 / 2 + 창문_길이 / 2, 창문설치높이 + 3, 세로z시작)),
+                FillOperation.Replace
+            );
+        } else {
+            for (let index2 = 0; index2 < 가로x끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(창문_위치_합, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(창문_위치_합 + 창문_길이, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    );
+                }
+                if (가로x끝 - 창문_위치_합 >= 가로x끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 - 창문_길이 + 1, 창문설치높이 + 2, 세로z시작)),
+                        positions.add(playerPos, pos(가로x끝 - 창문_위치_합 + 1, 창문설치높이 + 3, 세로z시작)),
+                        FillOperation.Replace
+                    );
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2;
+                }
+            }
+        }
+
+        // 반대편 벽에 복사
+        blocks.clone(
+            positions.add(playerPos, pos(가로x시작, 1, 세로z시작)),
+            positions.add(playerPos, pos(가로x끝, 높이, 세로z시작)),
+            positions.add(playerPos, pos(가로x시작, 1, 세로z끝)),
+            CloneMask.Replace,
+            CloneMode.Normal
+        );
+
+        // 세로 방향 창문 (ㄷ자 양쪽 벽)
+        창문_위치_합 = 창문_간격 + 2;
+        if (세로z창문_수 == 0) {
+            blocks.fill(
+                창문_블록,
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 / 2 - 창문_길이 / 2)),
+                positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 / 2 + 창문_길이 / 2)),
+                FillOperation.Replace
+            );
+        } else {
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 + 1 <= 세로13지점) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    );
+                }
+                if (세로z끝 - 창문_위치_합 - 1 >= 세로23지점) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x시작, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    );
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2;
+                }
+            }
+            // 오른쪽 벽 창문
+            창문_위치_합 = 창문_간격 + 2;
+            for (let index2 = 0; index2 < 세로z끝; index2++) {
+                if (창문_위치_합 + 창문_길이 <= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 창문_위치_합)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 창문_위치_합 + 창문_길이)),
+                        FillOperation.Replace
+                    );
+                }
+                if (세로z끝 - 창문_위치_합 >= 세로z끝 / 2) {
+                    blocks.fill(
+                        창문_블록,
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 2, 세로z끝 - 창문_위치_합 - 창문_길이 + 1)),
+                        positions.add(playerPos, pos(가로x끝, 창문설치높이 + 3, 세로z끝 - 창문_위치_합 + 1)),
+                        FillOperation.Replace
+                    );
+                    창문_위치_합 += 창문_길이 + 창문_간격 * 2;
+                }
+            }
+        }
+    }
+}
