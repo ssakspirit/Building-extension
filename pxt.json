@@ -1,7 +1,7 @@
 {
     "name": "building",
     "version": "1.0.0",
-    "description": "Minecraft Education Edition building blocks extension for ㅁ, ㄱ, ㄷ shaped buildings",
+    "description": "다양한 ㅁ, ㄱ, ㄷ, ㅇ 모양의 건축물을 만들 수 있도록 도와줍니다.",
     "license": "MIT",
     "dependencies": {
         "core": "*"
@@ -16,5 +16,20 @@
     },
     "supportedTargets": [
         "minecraft"
-    ]
+    ],
+    "preferredEditor": "blocksprj",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ssakspirit/Building-extension"
+    },
+    "homepage": "https://github.com/ssakspirit/Building-extension#readme",
+    "bugs": {
+        "url": "https://github.com/ssakspirit/Building-extension/issues"
+    },
+    "card": {
+        "name": "Building Extension",
+        "description": "다양한 모양의 건물을 쉽게 생성할 수 있는 확장",
+        "imageUrl": "./icon.png",
+        "url": "https://github.com/ssakspirit/Building-extension"
+    }
 } 
