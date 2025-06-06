@@ -488,7 +488,7 @@ namespace building {
             let 세로13지점_rounded = Math.round(세로13지점)
             let 세로23지점_rounded = Math.round(세로23지점)
             
-            if (가로12_rounded < 세로13지점_rounded) {
+            if (가로12 < 세로13지점) {
             삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
             삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로13지점_rounded, 높이, playerPos)
             삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로23지점_rounded, 세로z끝, 높이, playerPos)                
