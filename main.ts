@@ -1,3 +1,4 @@
+//% color=#1a1a1a weight=100 icon="\uf1ad"
 namespace building {
     // enum 지붕형태 관련 코드 전체 삭제
 
@@ -49,7 +50,7 @@ namespace building {
     /**
      * 건물 속성을 정하고 자동 계산을 수행하는 명령블록
      */
-    //% block="건물 속성 정하기 || 가로x끝:$width 세로z끝:$length 높이:$height 층높이:$floorHeight 지붕한계높이:$roofLimit | 바닥외부블록:$floorOuterBlock 바닥내부블록:$floorInnerBlock 기둥블록:$pillarBlock 벽블록:$wallBlock 지붕블록:$roofBlock 지붕형태:$roofType | 창문만들기:$windowEnabled 창문블록:$windowBlock 창문길이:$windowLength 창문간격:$windowGap"
+    //% block="직각 건물 속성 정하기 | 가로x끝:$width 세로z끝:$length 높이:$height 층높이:$floorHeight 바닥외부블록:$floorOuterBlock 바닥내부블록:$floorInnerBlock 기둥블록:$pillarBlock 벽블록:$wallBlock 지붕블록:$roofBlock 지붕형태:$roofType 지붕한계높이:$roofLimit 창문만들기:$windowEnabled 창문블록:$windowBlock 창문길이:$windowLength 창문간격:$windowGap"
     //% width.defl=20
     //% width.min=5 width.max=100
     //% length.defl=20
@@ -81,9 +82,9 @@ namespace building {
     //% windowLength.min=1 windowLength.max=10
     //% windowGap.defl=2
     //% windowGap.min=1 windowGap.max=10
-    //% expandableArgumentMode="toggle"
     //% weight=100
-    export function 건물속성정하기(
+    
+    export function 직각건물속성정하기(
         width: number = 20,
         length: number = 20,
         height: number = 20,
