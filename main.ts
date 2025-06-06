@@ -82,7 +82,7 @@ namespace building {
     //% windowLength.min=1 windowLength.max=10
     //% windowGap.defl=2
     //% windowGap.min=1 windowGap.max=10
-    //% weight=100
+    //% weight=200
     
     export function 직각건물속성정하기(
         width: number = 20,
@@ -152,7 +152,7 @@ namespace building {
      */
     //% block="ㅁ형 건물 생성"
     //% blockId=building_create_square
-    //% weight=90
+    //% weight=190
     export function ㅁ형건물생성(): void {
         ㅁ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
     }
@@ -162,7 +162,7 @@ namespace building {
      */
     //% block="ㄱ형 건물 생성"
     //% blockId=building_create_l_shape
-    //% weight=80
+    //% weight=180
     export function ㄱ형건물생성(): void {
         ㄱ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
     }
@@ -172,7 +172,7 @@ namespace building {
      */
     //% block="ㄷ형 건물 생성"
     //% blockId=building_create_u_shape
-    //% weight=70
+    //% weight=170
     export function ㄷ형건물생성(): void {
         ㄷ건물생성(가로x시작, 가로x끝, 세로z시작, 세로z끝, 높이, 층높이, 지붕한계높이, 바닥외부블록, 바닥내부블록, 기둥블록, 벽블록, 지붕블록, 지붕형태)
     }
@@ -180,9 +180,9 @@ namespace building {
     /**
      * 건물을 지우는 명령블록
      */
-    //% block="건물 지우기"
+    //% block="직각 건물 지우기"
     //% blockId=building_clear
-    //% weight=60
+    //% weight=160
     export function 건물지우기(): void {
         for (let index = 0; index <= 높이 + 지울_높이; index++) {
             blocks.fill(
@@ -1110,4 +1110,306 @@ namespace building {
             }
         }
     }
+
+    // 자동으로 계산되는 매개변수들
+    let 원형반지름 = 0
+    let 원형높이 = 0
+    let 원형층높이 = 0
+    let 원형지붕한계높이 = 0
+    let 원형바닥외부블록 = 0
+    let 원형바닥내부블록 = 0
+    let 원형벽블록 = 0
+    let 원형지붕블록 = 0
+    let 원형지붕형태 = 0
+    let 원형건축중심: Position = null
+    let 원형벽건축index = 0
+    let 원형층높이합계 = 0
+    let 원형원뿔꼭대기위치: Position = null
+
+    /**
+     * 원형 건물 속성을 정하고 자동 계산을 수행하는 명령블록
+     */
+    //% block="원형 건물 속성 정하기 | 반지름:$radius 높이:$height 층높이:$floorHeight 지붕한계높이:$roofLimit 바닥외부블록:$floorOuterBlock 바닥내부블록:$floorInnerBlock 벽블록:$wallBlock 지붕블록:$roofBlock 지붕형태:$roofType"
+    //% radius.defl=4
+    //% radius.min=3 radius.max=50
+    //% height.defl=10
+    //% height.min=3 height.max=100
+    //% floorHeight.defl=4
+    //% floorHeight.min=3 floorHeight.max=10
+    //% roofLimit.defl=0
+    //% roofLimit.min=0 roofLimit.max=50
+    //% floorOuterBlock.shadow=minecraftBlock
+    //% floorOuterBlock.defl=Block.Cobblestone
+    //% floorInnerBlock.shadow=minecraftBlock
+    //% floorInnerBlock.defl=Block.BlockOfQuartz
+    //% wallBlock.shadow=minecraftBlock
+    //% wallBlock.defl=Block.PlanksOak
+    //% roofBlock.shadow=minecraftBlock
+    //% roofBlock.defl=Block.LightGrayConcrete
+    //% roofType.shadow="circularRoofTypePicker"
+    //% roofType.defl=1
+    //% roofType.min=1 roofType.max=3
+    //% weight=100
+    
+    export function 원형건물속성정하기(
+        radius: number = 4,
+        height: number = 10,
+        floorHeight: number = 4,
+        roofLimit: number = 0,
+        floorOuterBlock: number = 4,
+        floorInnerBlock: number = 155,
+        wallBlock: number = 5,
+        roofBlock: number = 251,
+        roofType: number = 1
+    ): void {
+        
+        // 인수값들을 변수에 할당
+        원형반지름 = radius
+        원형높이 = height
+        원형층높이 = floorHeight
+        원형지붕한계높이 = roofLimit
+        원형바닥외부블록 = floorOuterBlock
+        원형바닥내부블록 = floorInnerBlock
+        원형벽블록 = wallBlock
+        원형지붕블록 = roofBlock
+        원형지붕형태 = roofType
+
+        // 자동 계산 수행
+        원형벽건축index = 0
+        원형층높이합계 = 0
+    }
+
+    // 원형 지붕 형태 선택기
+    //% shim=TD_ID
+    //% blockId=circularRoofTypePicker
+    //% block="$type"
+    //% blockHidden=true
+    //% type.fieldEditor="numberdropdown"
+    //% type.fieldOptions.decompileLiterals=true
+    //% type.fieldOptions.data='[["평면", 1], ["원뿔형", 2], ["돔형", 3]]'
+    //% type.defl=1
+    export function __circularRoofTypePicker(type: number): number {
+        return type;
+    }
+
+    /**
+     * 원형 건물을 생성하는 명령블록
+     */
+    //% block="원형 건물 생성"
+    //% blockId=circular_building_create
+    //% weight=90
+    export function 원형건물생성(): void {
+        원형건물_내부생성(원형반지름, 원형높이, 원형층높이, 원형지붕한계높이, 원형바닥외부블록, 원형바닥내부블록, 원형벽블록, 원형지붕블록, 원형지붕형태)
+    }
+
+    /**
+     * 원형 건물을 지우는 명령블록
+     */
+    //% block="원형 건물 지우기"
+    //% blockId=circular_building_clear
+    //% weight=80
+    export function 원형건물지우기(): void {
+        let playerPos = player.position()
+        
+        // 바닥 지우기
+        blocks.fill(
+            Block.Air,
+            positions.add(playerPos, pos(원형반지름, -1, 원형반지름)),
+            positions.add(playerPos, pos(-1 * 원형반지름, -1, -1 * 원형반지름)),
+            FillOperation.Replace
+        )
+        
+        // 건물 전체 지우기
+        for (let index = 0; index <= 원형높이 + 원형반지름; index++) {
+            blocks.fill(
+                Block.Air,
+                positions.add(playerPos, pos(원형반지름, index, 원형반지름)),
+                positions.add(playerPos, pos(-1 * 원형반지름, index, -1 * 원형반지름)),
+                FillOperation.Replace
+            )
+        }
+    }
+
+    // ===== 내부 헬퍼 함수들 =====
+
+    function 원형건물_내부생성(
+        반지름: number, 
+        높이: number, 
+        층높이: number, 
+        지붕한계높이: number, 
+        바닥블록외부: number, 
+        바닥블록내부: number, 
+        벽블록: number, 
+        지붕블록: number, 
+        지붕형태: number
+    ) {
+        원형건축중심 = player.position()
+        
+        // 돔형 지붕 먼저 생성 (다른 구조물 위에 올라가야 함)
+        if (지붕형태 == 3) {
+            원형돔지붕생성(지붕블록, 반지름, 높이)
+        }
+        
+        // 바닥 외부 원형
+        shapes.circle(
+            바닥블록외부,
+            원형건축중심,
+            반지름,
+            Axis.Y,
+            ShapeOperation.Replace
+        )
+        
+        // 바닥 내부 원형
+        shapes.circle(
+            바닥블록내부,
+            원형건축중심,
+            반지름 - 1,
+            Axis.Y,
+            ShapeOperation.Replace
+        )
+        
+        // 벽 생성
+        원형벽건축index = 0
+        for (let index = 0; index < 높이 - 1; index++) {
+            원형벽건축index += 1
+            shapes.circle(
+                벽블록,
+                positions.add(원형건축중심, pos(0, 원형벽건축index, 0)),
+                반지름,
+                Axis.Y,
+                ShapeOperation.Outline
+            )
+        }
+        
+        // 다층 건물 처리
+        원형층높이합계 = 0
+        if (0 < 층높이) {
+            원형층높이합계 += 층높이 + 1
+            while (원형층높이합계 < 높이) {
+                shapes.circle(
+                    바닥블록내부,
+                    positions.add(원형건축중심, pos(0, 원형층높이합계, 0)),
+                    반지름,
+                    Axis.Y,
+                    ShapeOperation.Replace
+                )
+                원형층높이합계 += 층높이 + 1
+            }
+        }
+        
+        // 지붕 생성
+        if (지붕형태 == 1) {
+            원형평면지붕생성(지붕블록, 반지름, 높이)
+        } else if (지붕형태 == 2) {
+            원형원뿔지붕생성(지붕블록, 반지름, 높이, 지붕한계높이)
+        }
+    }
+
+    // ===== 지붕 생성 함수들 =====
+
+    function 원형평면지붕생성(지붕블록: number, 반지름: number, 높이: number) {
+        shapes.circle(
+            지붕블록,
+            positions.add(원형건축중심, pos(0, 높이, 0)),
+            반지름,
+            Axis.Y,
+            ShapeOperation.Replace
+        )
+    }
+
+    function 원형원뿔지붕생성(지붕블록: number, 반지름: number, 높이: number, 지붕한계높이: number) {
+        for (let index = 0; index <= 반지름 + 1; index++) {
+            if (지붕한계높이 <= 0 || 지붕한계높이 > index) {
+                shapes.circle(
+                    지붕블록,
+                    positions.add(
+                        positions.add(원형건축중심, pos(0, 높이, 0)),
+                        pos(0, index, 0)
+                    ),
+                    반지름 - index,
+                    Axis.Y,
+                    ShapeOperation.Replace
+                )
+                원형원뿔꼭대기위치 = positions.add(
+                    positions.add(원형건축중심, pos(0, 높이, 0)),
+                    pos(0, index - 1, 0)
+                )
+            }
+        }
+        blocks.place(지붕블록, 원형원뿔꼭대기위치)
+    }
+
+    function 원형돔지붕생성(지붕블록: number, 반지름: number, 높이: number) {
+        // 구체 생성
+        shapes.sphere(
+            지붕블록,
+            positions.add(원형건축중심, pos(0, 높이, 0)),
+            반지름,
+            ShapeOperation.Outline
+        )
+        
+        // 구체 하단부 제거 (4사분면으로 나누어서)
+        // 1사분면 (+X, +Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(반지름, -1 * 반지름, 반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 2사분면 (-X, +Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(-1 * 반지름, -1 * 반지름, 반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 3사분면 (-X, -Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(-1 * 반지름, -1 * 반지름, -1 * 반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 4사분면 (+X, -Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(원형건축중심, pos(0, 높이, 0)),
+                pos(반지름, -1 * 반지름, -1 * 반지름)
+            ),
+            FillOperation.Replace
+        )
+    }
+
+
+
+
+
+
+
 }
