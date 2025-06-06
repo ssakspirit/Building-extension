@@ -1,4 +1,4 @@
-//% color=#1a1a1a weight=100 icon="\uf1ad"
+//% color=#404040 weight=100 icon="\uf1ad"
 namespace building {
     // enum 지붕형태 관련 코드 전체 삭제
 
@@ -141,7 +141,7 @@ namespace building {
     //% blockHidden=true
     //% type.fieldEditor="numberdropdown"
     //% type.fieldOptions.decompileLiterals=true
-    //% type.fieldOptions.data='[["평면", 1], ["삼각형", 2], ["피라미드형", 3], ["돔형", 4]]'
+    //% type.fieldOptions.data='[["평면", 1], ["삼각형", 2], ["피라미드형(ㅁ만 가능)", 3], ["돔형(정사각형ㅁ만 가능)", 4]]'
     //% type.defl=1
     export function __roofTypePicker(type: number): number {
         return type;
@@ -490,6 +490,10 @@ namespace building {
             if (가로12_rounded < 세로13지점_rounded) {
                 삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
                 삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로z시작, 세로13지점_rounded, 높이, playerPos)
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로23지점_rounded, 세로z끝, 높이, playerPos)
+                삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
+            } else {
+                삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로13지점_rounded, 세로z끝, 높이, playerPos)
                 삼각지붕세로ㅁ(지붕블록, 가로x시작, 가로x끝, 세로23지점_rounded, 세로z끝, 높이, playerPos)
                 삼각지붕가로ㅁ(지붕블록, 가로12_rounded, 가로x끝, 세로z시작, 세로z끝, 높이, playerPos)
             }
