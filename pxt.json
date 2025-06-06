@@ -1,8 +1,7 @@
 {
     "name": "building Extension",
     "version": "1.0.0",
-    "description": "다양한 ㅁ, ㄱ, ㄷ, ㅇ 모양의 건축물을 만들 수 있도록 도와줍니다.",
-    "dependencies": {
+    "description": "다양한 ㅁ, ㄱ, ㄷ, ㅇ 모양의 건축물을 만들 수 있도록 도와줍니다.",    "dependencies": {
         "core": "*",
         "builder": "*"
     },
@@ -18,5 +17,5 @@
     "supportedTargets": [
         "minecraft"
     ],
-    "preferredEditor": "tsprj"
+    "preferredEditor": "blocksprj",        
 } 
