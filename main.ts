@@ -647,6 +647,7 @@ namespace building {
         )
         
         // 구체 하단부 제거
+        // 1사분면 (+X, +Z)
         blocks.fill(
             Block.Air,
             positions.add(
@@ -662,6 +663,66 @@ namespace building {
                     pos(0, 높이, 0)
                 ),
                 pos(곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름, 곡면지붕ㅁ반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 2사분면 (-X, +Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(-1 * 곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름, 곡면지붕ㅁ반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 3사분면 (-X, -Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(-1 * 곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름)
+            ),
+            FillOperation.Replace
+        )
+        
+        // 4사분면 (+X, -Z)
+        blocks.fill(
+            Block.Air,
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(0, -1, 0)
+            ),
+            positions.add(
+                positions.add(
+                    positions.add(playerPos, pos(곡면지붕ㅁ중심, 0, 곡면지붕ㅁ중심)),
+                    pos(0, 높이, 0)
+                ),
+                pos(곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름, -1 * 곡면지붕ㅁ반지름)
             ),
             FillOperation.Replace
         )
