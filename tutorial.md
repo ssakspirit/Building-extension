@@ -2,52 +2,122 @@
 
 ## 소개 @unplugged
 
-Building Extension을 사용하여 마인크래프트에서 멋진 건물을 만들어봅시다!
+Building Extension을 사용하여 마인크래프트에서 멋진 건물을 쉽게 만들어봅시다!
 
 ## 단계 1
 
-먼저 플레이어가 "건물"이라고 채팅하면 정사각형 건물을 만들도록 해볼게요.
+먼저 플레이어가 "집"이라고 채팅하면 건물을 만들도록 해볼게요.
 
-``||player:on chat command||`` 블록을 추가하세요.
+``||player:on chat command||`` 블록을 작업 공간에 추가하세요.
 
 ```blocks
-player.onChat("건물", function () {
+player.onChat("집", function () {
 
 })
 ```
 
 ## 단계 2
 
-이제 ``||building:정사각형 건물 만들기||`` 블록을 추가하여 간단한 집을 만들어봅시다.
-
-크기를 10x10, 높이 8로 설정하세요.
+이제 ``||building:직각 건물 속성 정하기||`` 블록을 추가하여 건물의 크기와 재료를 설정합니다.
 
 ```blocks
-player.onChat("건물", function () {
-    building.createSquareBuilding(
-        pos(0, 0, 0),
+player.onChat("집", function () {
+    building.직각건물속성정하기(
         10,
         10,
-        8,
+        12,
+        4,
+        0,
+        COBBLESTONE,
         PLANKS_OAK,
-        PLANKS_SPRUCE,
-        STONE,
-        BRICK_BLOCK,
-        BuildingRoofType.Flat,
-        3,
-        1
+        LOG_OAK,
+        PLANKS_OAK,
+        LIGHT_GRAY_CONCRETE,
+        1,
+        true,
+        GLASS,
+        2,
+        2
     )
 })
 ```
 
-## 단계 3 @unplugged
+## 단계 3
 
-잘했어요! 이제 게임에서 "건물"이라고 입력하면 집이 만들어집니다.
+건물 속성을 정했으니, 이제 ``||building:ㅁ형 건물 생성||`` 블록을 추가하여 실제로 건물을 만들어봅시다!
 
-다른 모양도 시도해보세요!
+```blocks
+player.onChat("집", function () {
+    building.직각건물속성정하기(
+        10,
+        10,
+        12,
+        4,
+        0,
+        COBBLESTONE,
+        PLANKS_OAK,
+        LOG_OAK,
+        PLANKS_OAK,
+        LIGHT_GRAY_CONCRETE,
+        1,
+        true,
+        GLASS,
+        2,
+        2
+    )
+    building.ㅁ형건물생성()
+})
+```
+
+## 단계 4 @unplugged
+
+완벽합니다! 이제 게임에서 "집"이라고 입력하면 멋진 집이 만들어집니다.
+
+다른 모양도 시도해볼까요?
+
+## 단계 5
+
+이번에는 "큰건물"이라고 채팅하면 더 큰 건물을 만들어봅시다.
+
+새로운 ``||player:on chat command||`` 블록을 추가하고, 크기를 더 크게 설정하세요.
+
+```blocks
+player.onChat("큰건물", function () {
+    building.직각건물속성정하기(
+        20,
+        15,
+        20,
+        5,
+        0,
+        STONE,
+        PLANKS_SPRUCE,
+        COBBLESTONE,
+        STONE_BRICKS,
+        BRICK_BLOCK,
+        1,
+        true,
+        GLASS,
+        2,
+        3
+    )
+    building.ㅁ형건물생성()
+})
+```
+
+## 단계 6 @unplugged
+
+ㄱ형이나 ㄷ형 건물도 만들 수 있습니다!
+
+``||building:ㅁ형 건물 생성||`` 대신 ``||building:ㄱ형 건물 생성||`` 또는 ``||building:ㄷ형 건물 생성||``을 사용해보세요.
 
 ## 완료! @unplugged
 
-축하합니다! Building Extension 사용법을 배웠습니다.
+축하합니다! Building Extension의 기본 사용법을 배웠습니다.
 
-이제 다양한 크기와 모양의 건물을 만들어보세요!
+이제 다양한 크기, 재료, 모양의 건물을 자유롭게 만들어보세요!
+
+**팁:**
+- 가로x끝, 세로z끝으로 건물 크기 조절
+- 층높이로 각 층의 높이 설정
+- 다양한 블록으로 재료 변경
+- ㅁ형, ㄱ형, ㄷ형으로 다양한 모양 시도!
