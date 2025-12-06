@@ -110,9 +110,56 @@ player.onChat("큰건물", function () {
 
 ``||building:ㅁ형 건물 생성||`` 대신 ``||building:ㄱ형 건물 생성||`` 또는 ``||building:ㄷ형 건물 생성||``을 사용해보세요.
 
+## 단계 7
+
+만든 건물이 마음에 들지 않나요? ``||building:직각 건물 지우기||`` 블록으로 간단히 지울 수 있습니다.
+
+```blocks
+player.onChat("지우기", function () {
+    building.건물지우기()
+})
+```
+
+## 단계 8 @unplugged
+
+원형 건물도 만들 수 있습니다!
+
+``||building:원형 건물 속성 정하기||``와 ``||building:원형 건물 생성||`` 블록을 사용해보세요.
+
+## 단계 9
+
+원형 건물을 만들어봅시다!
+
+```blocks
+player.onChat("원형집", function () {
+    building.원형건물속성정하기(
+        8,
+        12,
+        4,
+        0,
+        COBBLESTONE,
+        PLANKS_OAK,
+        LOG_OAK,
+        LIGHT_GRAY_CONCRETE,
+        1
+    )
+    building.원형건물생성()
+})
+```
+
+## 단계 10
+
+원형 건물도 ``||building:원형 건물 지우기||`` 블록으로 지울 수 있습니다.
+
+```blocks
+player.onChat("원형지우기", function () {
+    building.원형건물지우기()
+})
+```
+
 ## 완료! @unplugged
 
-축하합니다! Building Extension의 기본 사용법을 배웠습니다.
+축하합니다! Building Extension의 기본 사용법을 모두 배웠습니다.
 
 이제 다양한 크기, 재료, 모양의 건물을 자유롭게 만들어보세요!
 
@@ -121,3 +168,5 @@ player.onChat("큰건물", function () {
 - 층높이로 각 층의 높이 설정
 - 다양한 블록으로 재료 변경
 - ㅁ형, ㄱ형, ㄷ형으로 다양한 모양 시도!
+- 지붕형태를 바꿔서 평면, 삼각형, 피라미드, 돔형 지붕 시도!
+- 원형 건물로 탑이나 성 만들기!
