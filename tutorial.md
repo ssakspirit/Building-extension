@@ -6,12 +6,12 @@ Building Extension을 사용하여 마인크래프트에서 멋진 건물을 쉽
 
 ## 단계 1
 
-먼저 플레이어가 "집"이라고 채팅하면 건물을 만들도록 해볼게요.
+먼저 플레이어가 "1"이라고 채팅하면 건물을 만들도록 해볼게요.
 
 ``||player:on chat command||`` 블록을 작업 공간에 추가하세요.
 
 ```blocks
-player.onChat("집", function () {
+player.onChat("1", function () {
 
 })
 ```
@@ -21,7 +21,7 @@ player.onChat("집", function () {
 이제 ``||building:직각 건물 속성 정하기||`` 블록을 추가하여 건물의 크기와 재료를 설정합니다.
 
 ```blocks
-player.onChat("집", function () {
+player.onChat("1", function () {
     building.직각건물속성정하기(
         10,
         10,
@@ -47,7 +47,7 @@ player.onChat("집", function () {
 건물 속성을 정했으니, 이제 ``||building:ㅁ형 건물 생성||`` 블록을 추가하여 실제로 건물을 만들어봅시다!
 
 ```blocks
-player.onChat("집", function () {
+player.onChat("1", function () {
     building.직각건물속성정하기(
         10,
         10,
@@ -71,18 +71,18 @@ player.onChat("집", function () {
 
 ## 단계 4 @unplugged
 
-완벽합니다! 이제 게임에서 "집"이라고 입력하면 멋진 집이 만들어집니다.
+완벽합니다! 이제 게임에서 "1"이라고 입력하면 멋진 집이 만들어집니다.
 
 다른 모양도 시도해볼까요?
 
 ## 단계 5
 
-이번에는 "큰건물"이라고 채팅하면 더 큰 건물을 만들어봅시다.
+이번에는 "2"라고 채팅하면 더 큰 건물을 만들어봅시다.
 
 새로운 ``||player:on chat command||`` 블록을 추가하고, 크기를 더 크게 설정하세요.
 
 ```blocks
-player.onChat("큰건물", function () {
+player.onChat("2", function () {
     building.직각건물속성정하기(
         20,
         15,
@@ -115,7 +115,7 @@ player.onChat("큰건물", function () {
 만든 건물이 마음에 들지 않나요? ``||building:직각 건물 지우기||`` 블록으로 간단히 지울 수 있습니다.
 
 ```blocks
-player.onChat("지우기", function () {
+player.onChat("0", function () {
     building.건물지우기()
 })
 ```
@@ -131,7 +131,7 @@ player.onChat("지우기", function () {
 원형 건물을 만들어봅시다!
 
 ```blocks
-player.onChat("원형집", function () {
+player.onChat("3", function () {
     building.원형건물속성정하기(
         8,
         12,
@@ -152,7 +152,7 @@ player.onChat("원형집", function () {
 원형 건물도 ``||building:원형 건물 지우기||`` 블록으로 지울 수 있습니다.
 
 ```blocks
-player.onChat("원형지우기", function () {
+player.onChat("00", function () {
     building.원형건물지우기()
 })
 ```
