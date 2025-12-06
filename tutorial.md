@@ -1,9 +1,5 @@
 # 건물 만들기 튜토리얼
 
-```package
-building=github:ssakspirit/Building-extension
-```
-
 ## 소개 @unplugged
 
 Building Extension을 사용하여 마인크래프트에서 멋진 건물을 쉽게 만들어봅시다!
